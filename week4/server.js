@@ -136,6 +136,75 @@ const requestListener = async (req, res) => {
   } else if (req.method === "OPTIONS") {
     res.writeHead(200, headers)
     res.end()
+  } else if (req.url==="/api/coaches/skill"&&req.method==="GET"){
+    try{
+      const packages = await AppDataSource.getRepository("Skill").find({
+        select:["id","name"]
+      });
+      res.writeHead(200,headers);
+      res.write(JSON.stringify({
+        status:"success",
+        data: packages
+      }));
+      res.end();
+    } catch(error){
+      res.writeHead(500,headers)
+      res.write(JSON.stringify({
+        status:"error",
+        message:"伺服器錯誤"
+      }));
+      res.end();
+    }
+  } else if(req.url==="/api/coaches/skill"&& req.method === "POST"){
+    req.on("end",async()=>{
+      try{
+        const data = JSON.parse(body);
+        if(isUndefined(data.name) || isNotValidSting(data.name)){
+          res.writeHead(400, headers)
+          res.write(JSON.stringify({
+            status: "failed",
+            message: "欄位未填寫正確"
+          }))
+          res.end()
+          return;
+        }
+        const skillRepo = await AppDataSource.getRepository("Skill");
+        const existSkill = await skillRepo.find({
+          where: {
+            name: data.name
+          }
+        });
+        if(existSkill.length > 0){
+          res.writeHead(409, headers)
+          res.write(JSON.stringify({
+            status: "failed",
+            message: "資料重複"
+          }))
+          res.end()
+          return;
+        }
+        const newSkill = await skillRepo.create({
+          name: data.name
+        });
+        const result = await skillRepo.save(newSkill);
+        console.log(result);
+        
+        res.writeHead(200, headers);
+        res.write(JSON.stringify({
+          status:"success",
+          data: result
+        }))
+        res.end();
+      }catch(error){
+        console.error(error)
+        res.writeHead(500, headers)
+        res.write(JSON.stringify({
+          status: "error",
+          message: "伺服器錯誤"
+        }))
+        res.end()
+      }
+    })
   } else {
     res.writeHead(404, headers)
     res.write(JSON.stringify({
