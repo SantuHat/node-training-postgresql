@@ -205,6 +205,44 @@ const requestListener = async (req, res) => {
         res.end()
       }
     })
+  } else if(req.url.startsWith("/api/coaches/skill/") && req.method === "DELETE"){
+    try{
+      const skillId = req.url.split('/').pop();
+      if (isUndefined(skillId) || isNotValidSting(skillId)) {
+        res.writeHead(400, headers)
+        res.write(JSON.stringify({
+          status: "failed",
+          message: "ID錯誤"
+        }))
+        res.end()
+        return
+      }
+  
+      const result = await AppDataSource.getRepository("SKILL").delete(skillId);
+  
+      if (result.affected === 0) {
+        res.writeHead(400, headers)
+        res.write(JSON.stringify({
+          status: "failed",
+          message: "ID錯誤"
+        }))
+        res.end()
+        return
+      }
+      res.writeHead(200, headers)
+      res.write(JSON.stringify({
+        status: "success"
+      }))
+      res.end();
+    } catch(error){
+      console.error(error)
+      res.writeHead(500, headers)
+      res.write(JSON.stringify({
+        status: "error",
+        message: "伺服器錯誤"
+      }))
+      res.end()
+    }
   } else {
     res.writeHead(404, headers)
     res.write(JSON.stringify({
